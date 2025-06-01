@@ -1,0 +1,26 @@
+{
+  "articles": [
+    {
+      "id": 1,
+      "title": "Breaking News",
+      "content": "Details about the news.",
+      "journalistId": 1,
+      "categoryId": 2
+    },
+    {
+      "id": 2,
+      "title": "Science Update",
+      "content": "Latest science info.",
+      "journalistId": 2,
+      "categoryId": 1
+    }
+  ],
+  "journalists": [
+    { "id": 1, "name": "Alice" },
+    { "id": 2, "name": "Bob" }
+  ],
+  "categories": [
+    { "id": 1, "name": "Science" },
+    { "id": 2, "name": "Politics" }
+  ]
+}
