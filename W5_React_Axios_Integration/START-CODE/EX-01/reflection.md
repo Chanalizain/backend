@@ -1,0 +1,8 @@
+# How did using useEffect() and axios help separate logic from UI?
+Using useEffect() allowed me to handle side effects like data fetching separately from the UI rendering logic. It ensured that API calls (using axios) were performed at the right lifecycle moments, such as after the component mounts or when dependencies change. This separation makes the component easier to read and maintain, because the UI code focuses purely on displaying data, while useEffect() manages asynchronous data fetching and updates state accordingly.
+
+# What state challenges did you face while managing form input and API response?
+Managing form input required careful handling to ensure controlled components updated the state correctly on each user input. Additionally, coordinating asynchronous API responses with state updates was challenging, especially in handling loading states, success confirmations, and error messages. Ensuring the form resets after submission without losing track of intermediate states, and avoiding race conditions or stale state during rapid input or multiple API calls, were important challenges I had to address.
+
+# How does REST structure help React developers write cleaner frontend code?
+RESTful APIs provide a predictable and standardized way to interact with backend data using clear HTTP methods (GET, POST, PUT, DELETE). This structure allows React developers to organize their frontend data fetching and mutations logically, aligning UI actions with API endpoints. It simplifies the management of CRUD operations, helps in designing reusable hooks or service functions for API calls, and leads to cleaner, more maintainable frontend code by clearly separating concerns between client and server.
