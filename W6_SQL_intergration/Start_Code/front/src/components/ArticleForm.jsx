@@ -85,7 +85,7 @@ export default function ArticleForm({ isEdit }) {
           name="journalist"
           value={formData.journalist}
           onChange={handleChange}
-          placeholder="Journalist ID"
+          placeholder="Journalist name"
           required
         />
         <br />
@@ -93,7 +93,7 @@ export default function ArticleForm({ isEdit }) {
           name="category"
           value={formData.category}
           onChange={handleChange}
-          placeholder="Category ID"
+          placeholder="Category"
           required
         />
         <br />

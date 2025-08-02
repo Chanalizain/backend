@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Import useNavigate
-import { getArticleById } from "../services/api"; // Ensure getArticleById is imported
+import { useParams, useNavigate } from "react-router-dom";
+import { getArticleById } from "../services/api";
 
 export default function ArticlePage() {
   const { id } = useParams();
-  const navigate = useNavigate(); // Initialize useNavigate hook
+  const navigate = useNavigate();
 
   const [article, setArticle] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -14,12 +14,13 @@ export default function ArticlePage() {
     if (id) {
       fetchArticle(id);
     }
-  }, [id]); // Rerun effect if ID changes
+  }, [id]);
 
   const fetchArticle = async (articleId) => {
     setIsLoading(true);
     setError("");
     try {
+      // The API call is updated to fetch combined article + journalist data
       const data = await getArticleById(articleId);
       setArticle(data);
     } catch (err) {
@@ -30,7 +31,6 @@ export default function ArticlePage() {
     }
   };
 
-  // Function to navigate to journalist's articles (kept, but not directly used in simplified UI)
   const handleJournalistClick = () => {
     if (article && article.journalist_id) {
       // Navigate to the new route for journalist's articles
@@ -53,12 +53,13 @@ export default function ArticlePage() {
   return (
     <div className="article-details">
       <h2>{article.title}</h2>
-      {/* Removed journalist display, as per the image */}
-      {/* Removed category display, as per the image */}
+      {/* Display journalist name as a clickable link */}
+      <div className="article-author">
+        By <span className="journalist-link" onClick={handleJournalistClick}>
+          {article.journalistName}
+        </span>
+      </div>
       <div className="article-content">{article.content}</div>
-
-      {/* Removed optional journalist details and back button, as per the image */}
     </div>
   );
 }
-

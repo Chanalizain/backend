@@ -1,27 +1,53 @@
-//
-//  This repository shall:
-//  - Connect to the database (using the pool provided by the database.js)
-// -  Perfrom the SQL querries to implement the bellow API
 import { pool } from '../utils/database.js';
 
 // Get all articles
-export async function getArticles() {
-    // TODO
-    let connection; // Declare connection variable to ensure it's accessible in finally block
+export async function getArticles(filterParams = {}) {
+    let connection;
     try {
-        // Get a connection from the pool
         connection = await pool.getConnection();
 
-        // Execute the SQL query to select all articles
-        // [rows] destructures the first element of the result array, which contains the rows
-        const [rows] = await connection.execute('SELECT id, title, content, journalist, category FROM articles');
+        let sql = `
+            SELECT
+                a.id,
+                a.title,
+                a.content,
+                a.journalist_id,
+                a.category_id,
+                j.name AS journalistName,
+                c.name AS categoryName
+            FROM
+                articles a
+            LEFT JOIN
+                journalists j ON a.journalist_id = j.id
+            LEFT JOIN
+                categories c ON a.category_id = c.id
+        `;
+
+        const params = [];
+        const whereClauses = [];
+
+        if (filterParams.journalistId) {
+            whereClauses.push('a.journalist_id = ?');
+            params.push(filterParams.journalistId);
+        }
+
+        if (filterParams.categoryId) {
+            whereClauses.push('a.category_id = ?');
+            params.push(filterParams.categoryId);
+        }
+
+        if (whereClauses.length > 0) {
+            sql += ` WHERE ${whereClauses.join(' AND ')}`;
+        }
+
+        sql += ` ORDER BY a.id ASC`;
+
+        const [rows] = await connection.execute(sql, params);
         return rows;
     } catch (error) {
         console.error("Error in getArticles:", error);
-        // Re-throw the error so the calling controller can handle it appropriately
         throw error;
     } finally {
-        // Ensure the connection is released back to the pool, even if an error occurs
         if (connection) {
             connection.release();
         }
@@ -30,35 +56,30 @@ export async function getArticles() {
 
 // Get one article by ID
 export async function getArticleById(id) {
-    // TODO
     let connection;
     try {
         connection = await pool.getConnection();
-
-        // Execute the SQL query to select an article by ID using a prepared statement
         const [rows] = await connection.execute(
             `
             SELECT
                 a.id,
                 a.title,
                 a.content,
-                a.journalist,      -- Old journalist string
-                a.category,
                 a.journalist_id,
-                j.name AS journalistName,    -- Journalist's name from journalists table
-                j.email AS journalistEmail,  -- Journalist's email from journalists table
-                j.bio AS journalistBio       -- Journalist's bio from journalists table
+                a.category_id,
+                j.name AS journalistName,
+                c.name AS categoryName
             FROM
                 articles a
             LEFT JOIN
                 journalists j ON a.journalist_id = j.id
+            LEFT JOIN
+                categories c ON a.category_id = c.id
             WHERE
                 a.id = ?
             `,
-            [id] // Pass the ID as a parameter to prevent SQL injection
+            [id]
         );
-
-        // If a row is found, return the first (and only) row; otherwise, return null
         return rows.length > 0 ? rows[0] : null;
     } catch (error) {
         console.error(`Error in getArticleById for ID ${id}:`, error);
@@ -71,19 +92,14 @@ export async function getArticleById(id) {
 }
 
 // Create a new article
-export async function createArticle(article) {
-    // TODO
+export async function createArticle(articleData) {
     let connection;
     try {
         connection = await pool.getConnection();
-
-        // Execute the SQL INSERT query using a prepared statement
         const [result] = await connection.execute(
-            'INSERT INTO articles (title, content, journalist, category) VALUES (?, ?, ?, ?)',
-            [articleData.title, articleData.content, articleData.journalist, articleData.category]
+            'INSERT INTO articles (title, content, journalist_id, category_id) VALUES (?, ?, ?, ?)',
+            [articleData.title, articleData.content, articleData.journalistId, articleData.categoryId]
         );
-
-        // The result object for INSERT queries contains insertId for auto-incremented primary keys
         const newArticle = { id: result.insertId, ...articleData };
         return newArticle;
     } catch (error) {
@@ -98,23 +114,16 @@ export async function createArticle(article) {
 
 // Update an article by ID
 export async function updateArticle(id, updatedData) {
-    // TODO
     let connection;
     try {
         connection = await pool.getConnection();
-
-        // Execute the SQL UPDATE query using a prepared statement
         const [result] = await connection.execute(
-            'UPDATE articles SET title = ?, content = ?, journalist = ?, category = ? WHERE id = ?',
-            [updatedData.title, updatedData.content, updatedData.journalist, updatedData.category, id]
+            'UPDATE articles SET title = ?, content = ?, journalist_id = ?, category_id = ? WHERE id = ?',
+            [updatedData.title, updatedData.content, updatedData.journalistId, updatedData.categoryId, id]
         );
-
-        // If affectedRows is 0, no article with the given ID was found to update
         if (result.affectedRows === 0) {
-            return null; // Indicate that the article was not found
+            return null;
         }
-
-        // Return the updated article data, assuming the update was successful
         return { id: id, ...updatedData };
     } catch (error) {
         console.error(`Error in updateArticle for ID ${id}:`, error);
@@ -128,19 +137,14 @@ export async function updateArticle(id, updatedData) {
 
 // Delete an article by ID
 export async function deleteArticle(id) {
-    // TODO
     let connection;
     try {
         connection = await pool.getConnection();
-
-        // Execute the SQL DELETE query using a prepared statement
         const [result] = await connection.execute(
             'DELETE FROM articles WHERE id = ?',
             [id]
         );
-
-        // If affectedRows is 0, no article with the given ID was found to delete
-        return result.affectedRows > 0; // Returns true if 1 or more rows were deleted, false otherwise
+        return result.affectedRows > 0;
     } catch (error) {
         console.error(`Error in deleteArticle for ID ${id}:`, error);
         throw error;
@@ -151,8 +155,8 @@ export async function deleteArticle(id) {
     }
 }
 
-//Fetches all articles with their associated journalist's name using a JOIN
-export async function getArticlesWithJournalistName() {
+// Fetches all articles with their associated journalist's name using a JOIN
+export async function getArticlesWithJournalistDetails() {
     let connection;
     try {
         connection = await pool.getConnection();
@@ -161,22 +165,22 @@ export async function getArticlesWithJournalistName() {
                 a.id,
                 a.title,
                 a.content,
-                a.journalist,      -- This is the old journalist string, keep for backward compatibility if needed
-                a.category,
                 a.journalist_id,
-                j.name AS journalistName, -- The journalist's name from the journalists table
-                j.email AS journalistEmail,
-                j.bio AS journalistBio
+                a.category_id,
+                j.name AS journalistName,
+                c.name AS categoryName
             FROM
                 articles a
             LEFT JOIN
                 journalists j ON a.journalist_id = j.id
+            LEFT JOIN
+                categories c ON a.category_id = c.id
             ORDER BY
                 a.id ASC
         `);
         return rows;
     } catch (error) {
-        console.error("Error in getArticlesWithJournalistName:", error);
+        console.error("Error in getArticlesWithJournalistDetails:", error);
         throw error;
     } finally {
         if (connection) {
@@ -185,7 +189,7 @@ export async function getArticlesWithJournalistName() {
     }
 }
 
-//Fetches all articles written by a specific journalist name using a JOIN
+// Fetches all articles written by a specific journalist name using a JOIN
 export async function getArticlesByJournalistName(journalistName) {
     let connection;
     try {
@@ -195,24 +199,117 @@ export async function getArticlesByJournalistName(journalistName) {
                 a.id,
                 a.title,
                 a.content,
-                a.journalist,      -- Old journalist string
-                a.category,
                 a.journalist_id,
+                a.category_id,
                 j.name AS journalistName,
-                j.email AS journalistEmail,
-                j.bio AS journalistBio
+                c.name AS categoryName
             FROM
                 articles a
-            INNER JOIN    -- Use INNER JOIN here as we specifically need articles with a matched journalist
+            INNER JOIN
                 journalists j ON a.journalist_id = j.id
+            LEFT JOIN
+                categories c ON a.category_id = c.id
             WHERE
                 j.name = ?
             ORDER BY
                 a.id ASC
-        `, [journalistName]); // Pass journalistName as a parameter for the WHERE clause
+        `, [journalistName]);
         return rows;
     } catch (error) {
         console.error(`Error in getArticlesByJournalistName for '${journalistName}':`, error);
+        throw error;
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+}
+
+// Fetches all articles written by a specific journalist ID
+export async function getArticlesByJournalistId(journalistId) {
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute(
+            `
+            SELECT
+                a.id,
+                a.title,
+                a.content,
+                a.journalist_id,
+                a.category_id,
+                j.name AS journalistName,
+                c.name AS categoryName
+            FROM
+                articles a
+            INNER JOIN
+                journalists j ON a.journalist_id = j.id
+            LEFT JOIN
+                categories c ON a.category_id = c.id
+            WHERE
+                j.id = ?
+            `,
+            [journalistId]
+        );
+        return rows;
+    } catch (error) {
+        console.error(`Error in getArticlesByJournalistId for ID ${journalistId}:`, error);
+        throw error;
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+}
+
+// Retrieve all categories
+export async function getCategories() {
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute('SELECT id, name FROM categories');
+        return rows;
+    } catch (error) {
+        console.error("Error in getCategories:", error);
+        throw error;
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+}
+
+// Retrieve all articles filtered by category, using JOIN
+export async function getArticlesByCategoryId(categoryId) {
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute(
+            `
+            SELECT
+                a.id,
+                a.title,
+                a.content,
+                a.journalist_id,
+                a.category_id,
+                j.name AS journalistName,
+                c.name AS categoryName
+            FROM
+                articles a
+            LEFT JOIN
+                journalists j ON a.journalist_id = j.id
+            INNER JOIN
+                categories c ON a.category_id = c.id
+            WHERE
+                c.id = ?
+            ORDER BY
+                a.id ASC
+            `,
+            [categoryId]
+        );
+        return rows;
+    } catch (error) {
+        console.error(`Error in getArticlesByCategoryId for ID ${categoryId}:`, error);
         throw error;
     } finally {
         if (connection) {

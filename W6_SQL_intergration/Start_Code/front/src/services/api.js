@@ -1,10 +1,20 @@
-// src/services/api.js
-import axios from "axios";
+import axios from 'axios';
 
 const API_BASE_URL = "http://localhost:4000/api";
 
-export const getArticles = async () => {
-  const response = await axios.get(`${API_BASE_URL}/articles`);
+export const getArticles = async (filters = {}) => {
+  const { journalistId, categoryId } = filters;
+  let url = `${API_BASE_URL}/articles`;
+
+  const params = {};
+  if (journalistId) {
+    params.journalistId = journalistId;
+  }
+  if (categoryId) {
+    params.categoryId = categoryId;
+  }
+
+  const response = await axios.get(url, { params });
   return response.data;
 };
 
@@ -25,6 +35,22 @@ export const updateArticle = async (id, updatedData) => {
 
 export const removeArticle = async (id) => {
   const response = await axios.delete(`${API_BASE_URL}/articles/${id}`);
+  return response.data;
+};
+
+export const getArticlesByJournalistId = async (id) => {
+  const response = await axios.get(`${API_BASE_URL}/journalists/${id}/articles`);
+  return response.data;
+};
+
+export const getJournalists = async () => {
+  const response = await axios.get(`${API_BASE_URL}/journalists`);
+  return response.data;
+};
+
+export const getCategories = async () => {
+  // Correcting the API endpoint to match the router
+  const response = await axios.get(`${API_BASE_URL}/categories`);
   return response.data;
 };
 

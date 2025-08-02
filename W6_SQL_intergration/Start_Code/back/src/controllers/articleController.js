@@ -1,6 +1,9 @@
-import * as articleRepository from "../repositories/mockArticleRepository.js";
+// src/controllers/articleController.js
+// TODO: This comment is no longer needed, as the import has been changed below.
 
-// TODO : Change articleRepository to use the sqlArticleRepository
+// Import your SQL-based repository instead of the mock one.
+import * as articleRepository from "../repositories/sqlArticleRepository.js";
+
 
 // GET /api/articles
 export async function getAllArticles(req, res) {
@@ -58,7 +61,10 @@ export async function updateArticle(req, res) {
 // DELETE /api/articles/:id
 export async function deleteArticle(req, res) {
   try {
-    await articleRepository.deleteArticle(req.params.id);
+    const success = await articleRepository.deleteArticle(req.params.id);
+    if (!success) {
+      return res.status(404).json({ message: "Article not found" });
+    }
     res.status(204).send();
   } catch (error) {
     console.error("Error deleting article:", error);

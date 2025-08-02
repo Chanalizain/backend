@@ -9,6 +9,7 @@ import {
 import ArticleList from "./components/ArticleList";
 import ArticleForm from "./components/ArticleForm";
 import ArticlePage from "./components/ArticlePage";
+import JournalistArticlesPage from "./components/JournalistArticlesPage"; // New component for journalist's articles
 
 function App() {
   return (
@@ -31,6 +32,8 @@ function App() {
           element={<ArticleForm isEdit={true} />}
         />
         <Route path="/articles/:id" element={<ArticlePage />} />
+        {/* New route to display all articles by a specific journalist */}
+        <Route path="/journalists/:id/articles" element={<JournalistArticlesPage />} />
       </Routes>
     </BrowserRouter>
   );

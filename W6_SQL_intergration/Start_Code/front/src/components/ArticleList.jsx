@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getArticles, removeArticle } from "../services/api";
+import FilterBar from "./FilterBar.jsx";
 
 //
 // ArticleList component
@@ -9,6 +10,7 @@ export default function ArticleList() {
   const [articles, setArticles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [filters, setFilters] = useState({});
 
   const navigate = useNavigate();
 
@@ -16,11 +18,11 @@ export default function ArticleList() {
     fetchArticles(); // Fetch all articles when component mounts
   }, []);
 
-  const fetchArticles = async () => {
+  const fetchArticles = async (filterParams = {}) => {
     setIsLoading(true);
     setError("");
     try {
-      const data = await getArticles();
+      const data = await getArticles(filterParams);
       setArticles(data);
     } catch (err) {
       setError("Failed to load articles. Please try again.");
@@ -46,11 +48,22 @@ export default function ArticleList() {
 
   const handleEdit = (id) => navigate(`/articles/${id}/edit`);
 
+  const handleJournalistView = (id) => {
+    navigate(`/journalists/${id}/articles`);
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    fetchArticles(newFilters);
+  };
+
   return (
     <>
       {isLoading && <p>Loading...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
       
+      <FilterBar onFilterChange={handleFilterChange} />
+
       <div className="article-list">
         {articles.map((article) => (
           <ArticleCard
@@ -59,6 +72,7 @@ export default function ArticleList() {
             onView={handleView}
             onEdit={handleEdit}
             onDelete={deleteArticle}
+            onJournalistView={handleJournalistView}
           />
         ))}
       </div>
@@ -66,11 +80,19 @@ export default function ArticleList() {
   );
 }
 
-function ArticleCard({ article, onView, onEdit, onDelete }) {
+// Export the ArticleCard component so it can be used in other files
+export function ArticleCard({ article, onView, onEdit, onDelete, onJournalistView }) {
   return (
     <div className="article-card">
       <div className="article-title">{article.title}</div>
-      <div className="article-author">By {article.journalist}</div>
+      <div className="article-author">
+        By <span className="clickable-link" onClick={() => onJournalistView(article.journalist_id)}>
+          {article.journalistName}
+        </span>
+      </div>
+      <div className="article-category">
+        Category: {article.categoryName}
+      </div>
 
       <div className="article-actions">
         <button className="button-tertiary" onClick={() => onEdit(article.id)}>
