@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-
+//Q1 – Display All Articles
 export default function ArticleList() {
   const [articles, setArticles] = useState([]);
   const navigate = useNavigate();

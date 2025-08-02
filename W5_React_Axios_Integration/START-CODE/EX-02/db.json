@@ -1,25 +1,42 @@
 {
   "articles": [
     {
+      "id": 1,
       "title": "A Beginner's Guide to React",
       "content": "React is a JavaScript library for building user interfaces. It is maintained by Meta and a community of individual developers and companies. This article will walk you through the basics of getting started.",
-      "journalistId": 101,
-      "categoryId": "1",
-      "id": 1
+      "journalistId": 1,
+      "categoryId": 1
     },
     {
       "id": 2,
       "title": "Understanding Node.js Event Loop",
       "content": "The Node.js event loop is what enables Node.js to perform non-blocking I/O operations despite the fact that JavaScript is single-threaded. This article provides a deep dive into how it works.",
-      "journalistId": 102,
+      "journalistId": 2,
       "categoryId": 2
     },
     {
       "id": 3,
       "title": "Tips for Writing Clean Code",
       "content": "Clean code is code that is easy to read, easy to understand, and easy to modify. Here are some practical tips to improve the quality of your codebase.",
-      "journalistId": 101,
+      "journalistId": 1,
       "categoryId": 3
+    },
+    {
+      "id": 4,
+      "title": "Data Structures in JavaScript",
+      "content": "A comprehensive overview of common data structures and their implementations in JavaScript, from arrays to hash maps.",
+      "journalistId": 3,
+      "categoryId": 1
     }
+  ],
+  "journalists": [
+    { "id": 1, "name": "Jane Doe" },
+    { "id": 2, "name": "John Smith" },
+    { "id": 3, "name": "Peter Jones" }
+  ],
+  "categories": [
+    { "id": 1, "name": "Programming" },
+    { "id": 2, "name": "Backend" },
+    { "id": 3, "name": "Best Practices" }
   ]
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
+//Q4 – Update Existing Article
 export default function UpdateArticleForm() {
   const { id } = useParams();  // get article ID from route params
 

@@ -1,118 +1,128 @@
+// src/components/ArticleFilter.jsx
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const API_URL = 'http://localhost:5000';
+
 export default function ArticleFilter() {
   const [articles, setArticles] = useState([]);
-  // Fetch all articles when component mounts
-  const [allArticles, setAllArticles] = useState([]);
   const [journalists, setJournalists] = useState([]);
   const [categories, setCategories] = useState([]);
-
   const [selectedJournalist, setSelectedJournalist] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Q1: Fetch all journalists and categories on component mount
   useEffect(() => {
-    fetchArticles();
-    fetchJournalists();
-    fetchCategories();
+    const fetchDropdownData = async () => {
+      try {
+        const [journalistsRes, categoriesRes] = await Promise.all([
+          axios.get(`${API_URL}/journalists`),
+          axios.get(`${API_URL}/categories`),
+        ]);
+        setJournalists(journalistsRes.data);
+        setCategories(categoriesRes.data);
+      } catch (err) {
+        setError("Failed to fetch filter options.");
+        console.error('Error fetching dropdown data:', err);
+      }
+    };
+    fetchDropdownData();
   }, []);
 
-  const fetchArticles = async () => {
-    // Fetch articles from the API
-    try {
-      const res = await axios.get('http://localhost:5000/articles');
-      setArticles(res.data);
-      setAllArticles(res.data); // store for reset
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-    }
-  };
+  // Q2, Q3, Q4: Fetch articles based on selected filters (server-side)
+  // This useEffect will run whenever selectedJournalist or selectedCategory changes
+  useEffect(() => {
+    const fetchFilteredArticles = async () => {
+      setLoading(true);
+      setError(null);
+      
+      let apiUrl = `${API_URL}/articles`;
+      const params = {};
 
-  const fetchJournalists = async () => {
-    // Fetch journalists from the API
-    try {
-      const res = await axios.get('http://localhost:5000/journalists');
-      setJournalists(res.data);
-    } catch (error) {
-      console.error('Error fetching journalists:', error);
-    }
-  };
+      if (selectedJournalist) {
+        params.journalistId = selectedJournalist;
+      }
+      
+      if (selectedCategory) {
+        params.categoryId = selectedCategory;
+      }
 
-  const fetchCategories = async () => {
-    // Fetch categories from the API
-    try {
-      const res = await axios.get('http://localhost:5000/categories');
-      setCategories(res.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  }
-  const applyFilters = () => {
-    let filtered = allArticles;
+      try {
+        const res = await axios.get(apiUrl, { params });
+        setArticles(res.data);
+      } catch (err) {
+        setError("Failed to fetch articles. Please check the backend server and API routes.");
+        console.error('Error fetching filtered articles:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (selectedJournalist) {
-      filtered = filtered.filter(article => article.journalistId === parseInt(selectedJournalist));
-    }
+    fetchFilteredArticles();
+  }, [selectedJournalist, selectedCategory]);
 
-    if (selectedCategory) {
-      filtered = filtered.filter(article => article.categoryId === parseInt(selectedCategory));
-    }
-
-    setArticles(filtered);
-  };
-
-  const resetFilters = () => {
+  const handleResetFilters = () => {
     setSelectedJournalist('');
     setSelectedCategory('');
-    setArticles(allArticles);
   };
 
   return (
-    <div>
-      <h2>Articles</h2>
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <label htmlFor="journalistFilter">Filter by Journalist:</label>
-        <select 
+    <div className="container mx-auto p-6">
+      <h2 className="text-2xl font-bold mb-4">Filter Articles</h2>
+
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+        <label htmlFor="journalistFilter" className="font-medium text-gray-700">Filter by Journalist:</label>
+        <select
           id="journalistFilter"
           value={selectedJournalist}
-          onChange={(e) => setSelectedJournalist(e.target.value)} 
+          onChange={(e) => setSelectedJournalist(e.target.value)}
+          className="p-2 border rounded-md shadow-sm"
         >
           <option value="">All Journalists</option>
           {journalists.map(j => (
-            <option key={j.id} value={j.id}>{j.name}</option>
+            <option key={j.id} value={j.id}>{j.name || `Journalist #${j.id}`}</option>
           ))}
         </select>
 
-        <label htmlFor="categoryFilter">Filter by Category:</label>
+        <label htmlFor="categoryFilter" className="font-medium text-gray-700">Filter by Category:</label>
         <select
           id="categoryFilter"
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
+          className="p-2 border rounded-md shadow-sm"
         >
           <option value="">All Categories</option>
           {categories.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <option key={c.id} value={c.id}>{c.name || `Category #${c.id}`}</option>
           ))}
         </select>
-
+        
         <button
-          onClick={applyFilters}
-        >Apply Filters</button>
-        <button
-          onClick={resetFilters}
-        >Reset Filters</button>
+          onClick={handleResetFilters}
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg shadow-sm hover:bg-gray-300 transition duration-300"
+        >
+          Reset Filters
+        </button>
       </div>
 
-      <ul>
-        {articles.map(article => (
-          <li key={article.id}>
-            <strong>{article.title}</strong> <br />
-            <small>By Journalist #{article.journalistId} | Category #{article.categoryId}</small><br />
-            <button disabled>Delete</button>
-            <button disabled>Update</button>
-            <button disabled>View</button>
-          </li>
-        ))}
-      </ul>
+      {loading && <p className="text-center text-gray-600">Loading articles...</p>}
+      {error && <p className="text-center text-red-500">{error}</p>}
+      {!loading && !error && articles.length === 0 && (
+        <p className="text-center text-gray-600">No articles found with the selected filters.</p>
+      )}
+      
+      {!loading && !error && articles.length > 0 && (
+        <ul className="space-y-4">
+          {articles.map(article => (
+            <li key={article.id} className="p-4 bg-white rounded-lg shadow-sm border-l-4 border-indigo-500">
+              <h3 className="text-xl font-semibold">{article.title}</h3>
+              <small className="text-gray-500">By Journalist #{article.journalistId} | Category #{article.categoryId}</small>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

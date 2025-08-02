@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-
+//Q2 – View Article Details
 export default function ArticleViewer() {
   const { id } = useParams(); 
   const [article, setArticle] = useState(null);
